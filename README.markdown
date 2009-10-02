@@ -110,6 +110,12 @@ Installing behaveJS
 * Install with `bash > script/plugin install git://github.com/rightscale/behaveJS.git`
 * Include the necessary Javascript files in your layout with `<%= javascript_include_tag "behaveJS", "behaveJS_application" %>`. If you are using asset_packager, simply add these two files to your `asset_packages.yml` file. Either way, make sure that they are added after the inclusion of Prototype.
 * Place the following method call `<%= behaveJS_bootstrap %>` right after all of your asset includes and you should be good to go!
+
+Requirements
+------------
+
+* [Prototype](http://prototypejs.org/ "Prototype") JavaScript framework, version 1.6.0.2 or higher. 
+* Rails 2.1.2, 2.2.2, and 2.3.2 are all compatible. Older versions may be as well, but were not tested.
   
 What exactly does behaveJS provide again?
 -----------------------------------------

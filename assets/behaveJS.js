@@ -29,7 +29,7 @@
 			behaviorAttr							= "data-behaves",
 			delegatedAttr							= "data-delegated",
 			delegatedAttrSelector			= "[data-delegated=click]",
-			readyDestructorCacheKey  	= "behaveJSReadDestructor",
+			readyDestructorCacheKey  	= "behaveJSReadyDestructor",
 			coreBehaviorsKey					= "behaveJSCoreBehaviors";
 	
 	function _getStorageKey(controller, action)
@@ -42,10 +42,8 @@
 	
 	function _inititalizeActiveBehaviors()
 	{
-		activeBehaviors = { "default" : _defaultBehavior, "remote" : _remoteBehavior };
-	
 		// add the core behaviors, which are not based on controllers/actions		
-		Object.extend(activeBehaviors, allBehaviors[coreBehaviorsKey] || {});
+		Object.extend(activeBehaviors, allBehaviors[coreBehaviorsKey]);
 			
 		// add behaviors defined for the current controller and for both the current controller and current action
 		// behaviors defined with more specificity will take precedence
@@ -322,11 +320,14 @@
 	  }
 	}
 		
-	var	allBehaviors 		= {},	// storage for all behaviors, active and inactive
-	 		activeBehaviors = {},	// storage for all behaviors that are active for the current controller and action
-			controllers 		= {},	// storage for all controllers
-			remoteActions		= {}; // storage for all remote actions
+	var	controllers 		= {},	// storage for all controllers
+			remoteActions		= {}, // storage for all remote actions
+			allBehaviors 		= {},	// storage for all behaviors, active and inactive
+			// storage for all behaviors that are active for the current controller and action
+	 		activeBehaviors = { "default" : _defaultBehavior, "remote" : _remoteBehavior };
 		
+	allBehaviors[coreBehaviorsKey] = {};
+
 	var behaveJS = 
 	{
 		version 	 : 1.0,
@@ -399,6 +400,7 @@
 			//  behaveJS.addBehaviors( { controller : "items", actions : "new" }, { show_dialog : function(event) { ... } });
 			// 		- Adds the "show_dialog" behavior to only the page using the controller "items" and the action "new"
 			// ========================================================================================================================
+			if (arguments.length == 0) return;
 			
 			var behaviorKey = coreBehaviorsKey, newBehaviors = arguments[0];
 
@@ -409,7 +411,7 @@
 				behaviorKey  = _getStorageKey(arguments[0].controller, arguments[0].action)
 			}
 			
-			allBehaviors[behaviorKey] = newBehaviors;
+			allBehaviors[behaviorKey] = Object.extend(allBehaviors[behaviorKey] || {}, newBehaviors);
 		},
 		createController : function(controllerName, methods)
 		{
@@ -426,31 +428,23 @@
 				controllers[controllerName] = Class.create(controllers["application"], methods);
 			}
 		},
-		attachBehaviors : function(elements, optBehaviors)
+		attachBehaviors : function(element, optBehaviors)
 		{
-			var elem 								 = null, 
-					behaviors 					 = (optBehaviors || activeBehaviors),
+			var behaviors 					 = (optBehaviors || activeBehaviors),
 					bindBehaviorCallback = _bindBehaviorsToElement.curry(behaviors);
 
-			if (!Object.isArray(elements)) elements = [elements];
-
-			for(var iter = 0, length = elements.length; iter < length; ++iter)
+    	if (!(element = $(element))) return;
+				
+			if (optBehaviors || !element.up(delegatedAttrSelector))
 			{
-				elem = elements[iter];
-			
-    		if (!(elem = $(elem))) continue;
-				
-				if (optBehaviors || !elem.up(delegatedAttrSelector))
-				{
-					// we setup event delegation on the element if is not within another element
-					// that has event delegation enabled or if we are attaching custom behaviors other
-					// then the active ones.
-					_delegateBehaviors(elem, behaviors);
-				}
-				
-				// bind behaviors to individual elements we are not using event delegation on
-				_iterateDescendentsWithBehaviors(elem, bindBehaviorCallback);
+				// we setup event delegation on the element if is not within another element
+				// that has event delegation enabled or if we are attaching custom behaviors other
+				// then the active ones.
+				_delegateBehaviors(element, behaviors);
 			}
+				
+			// bind behaviors to individual elements we are not using event delegation on
+			_iterateDescendentsWithBehaviors(element, bindBehaviorCallback);
 		},
 		detachBehaviors : function (elem)
 		{
@@ -535,3 +529,69 @@ Element.addMethods("A",
    	return new Ajax.Request(href, options);	
 	}
 });
+
+// Add Element.Storage if it doesn't already exist (Added in Prototype 1.6.1)
+if (!Element.Storage)
+{
+	Element.Storage = {
+	  UID: 1
+	};
+
+	Element.addMethods({
+	  getStorage: function(element) {
+	    if (!(element = $(element))) return;
+
+	    var uid;
+	    if (element === window) {
+	      uid = 0;
+	    } else {
+	      if (typeof element._prototypeUID === "undefined")
+	        element._prototypeUID = [Element.Storage.UID++];
+	      uid = element._prototypeUID[0];
+	    }
+
+	    if (!Element.Storage[uid])
+	      Element.Storage[uid] = $H();
+
+	    return Element.Storage[uid];
+	  },
+
+	  store: function(element, key, value) {
+	    if (!(element = $(element))) return;
+
+	    if (arguments.length === 2) {
+	      Element.getStorage(element).update(key);
+	    } else {
+	      Element.getStorage(element).set(key, value);
+	    }
+
+	    return element;
+	  },
+
+	  retrieve: function(element, key, defaultValue) {
+	    if (!(element = $(element))) return;
+	    var hash = Element.getStorage(element), value = hash.get(key);
+
+	    if (Object.isUndefined(value)) {
+	      hash.set(key, defaultValue);
+	      value = defaultValue;
+	    }
+
+	    return value;
+	  },
+
+	  clone: function(element, deep) {
+	    if (!(element = $(element))) return;
+	    var clone = element.cloneNode(deep);
+	    clone._prototypeUID = void 0;
+	    if (deep) {
+	      var descendants = Element.select(clone, '*'),
+	          i = descendants.length;
+	      while (i--) {
+	        descendants[i]._prototypeUID = void 0;
+	      }
+	    }
+	    return Element.extend(clone);
+	  }
+	});
+}
