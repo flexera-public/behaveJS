@@ -9,9 +9,9 @@ Overview
   enable you write Javascript that is reusable, organized, unobtrusive, and efficient. 
   The plugin consists of three main components:
 
-* [Controller](http://wiki.github.com/rightscale/behaveJS/controllers "Controller")
-* [Behavior](http://wiki.github.com/rightscale/behaveJS/behaviors "Behavior")
-* [RemoteAction](http://wiki.github.com/rightscale/behaveJS/remoteactions "RemoteAction")
+* [Controller](http://wiki.github.com/rightscale/behaveJS/controller "Controller")
+* [Behavior](http://wiki.github.com/rightscale/behaveJS/behavior "Behavior")
+* [RemoteAction](http://wiki.github.com/rightscale/behaveJS/remoteaction "RemoteAction")
   
 How does it work? ( in 20 seconds or less )
 -------------------------------------------
@@ -121,7 +121,7 @@ What exactly does behaveJS provide again?
 -----------------------------------------
 
 * Extensions to Rails helpers that integrate with the behaveJS Javascript framework for unobtrusive functionality
-* A full featured library for creating Javascript [Controllers](http://wiki.github.com/rightscale/behaveJS/controllers "Controllers"), [Behaviors](http://wiki.github.com/rightscale/behaveJS/behaviors "Behaviors"), and [RemoteActions](http://wiki.github.com/rightscale/behaveJS/remoteactions "RemoteActions")
+* A full featured library for creating Javascript [Controllers](http://wiki.github.com/rightscale/behaveJS/controller "Controllers"), [Behaviors](http://wiki.github.com/rightscale/behaveJS/behavior "Behaviors"), and [RemoteActions](http://wiki.github.com/rightscale/behaveJS/remoteaction "RemoteActions")
 * Ability to easily override how confirmation messages are displayed in your app
 * Peace, Love, and Rock n' Roll!
 
