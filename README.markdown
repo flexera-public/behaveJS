@@ -22,7 +22,7 @@ How does it work? ( in 20 seconds or less )
   used by Rails and invokes the same action. The Javascript controllers are responsible for the configuration
   of various UI components and promote object-oriented client-side code. Behaviors are then computed, taking into 
   account the current controller/action, and are integrated into the UI utilizing event delegation. Below is some 
-  sample code utilizing behaveJS Controllers and Behaviors. An example of RemoteActions can be found [here](http://wiki.github.com/rightscale/behaveJS/remoteactions "RemoteAction").
+  sample code utilizing behaveJS Controllers and Behaviors. An example of RemoteActions can be found [here](http://wiki.github.com/rightscale/behaveJS/remoteaction "RemoteAction").
 
 #### Layout: ####
   
