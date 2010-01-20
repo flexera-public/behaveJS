@@ -23,7 +23,12 @@
 
 module BehaveJSActionView
 
-  SUPPORTED_METHODS = [ :link_to, :content_tag, :form_tag ]
+  OVERRIDDEN_HELPER_METHODS = [ :link_to, :content_tag, :form_tag, :tag ]
+  
+  def extract_and_dup(options, key)
+    val = options.delete(key)
+    val ? val.dup : {}
+  end
   
   module InstanceMethods
     
@@ -44,38 +49,40 @@ module BehaveJSActionView
       if block_given?
         name         = capture(&block)
         url          = args[0] || {}
-        html_options = args[1] || {}
+        html_options = args[1] ? args[1].dup : {}
       else
         name         = args[0]
         url          = args[1] || {}
-        html_options = args[2] || {}
+        html_options = args[2] ? args[2].dup : {}
       end
 
-      html_options = html_options.symbolize_keys
-      config       = html_options.delete(:config) || {}
-      behavior     = html_options.delete(:behaves) || {}
-      remote       = html_options.delete(:remote)
-      popup        = html_options.delete(:popup)
-      raise "You can't use :popup and :method in the same link" if html_options[:method] && popup
+      html_options.stringify_keys!
+      
+      config   = extract_and_dup(html_options, "config").stringify_keys
+      behavior = extract_and_dup(html_options, "behaves").stringify_keys
+      remote   = html_options.delete("remote")
+      popup    = html_options.delete("popup")
+
+      raise "You can't use :popup and :method in the same link" if html_options["method"] && popup
 
       popup = true if popup.is_a?(String)
 
-      config[:confirm]      = html_options.delete(:confirm)
-      config[:method]       = (html_options.delete(:method) || "get").to_s
-      config[:popup]        = popup && Array(popup).to_json
+      config["confirm"]      = html_options.delete("confirm")
+      config["method"]       = (html_options.delete("method") || "get").to_s
+      config["popup"]        = popup && Array(popup).to_json
 
       # when a string/symbol is provided for the remote argument, we make that into a "remoteAction" config attribute
-      config[:remoteAction] = remote if remote.is_a?(String) || remote.is_a?(Symbol)
+      config["remoteAction"] = remote if remote.is_a?(String) || remote.is_a?(Symbol)
 
       # the remote argument takes precedence over any specified click behavior
-      behavior[:click] = :remote if remote
+      behavior["click"] = "remote" if remote
 
-      if !behavior[:click] && (config[:confirm] || config[:popup] || config[:method] !~ /get/i)
+      if !behavior["click"] && (config["confirm"] || config["popup"] || config["method"] !~ /get/i)
         # when a click behavior is not provided and either a confirm, method, or popup are used - we set the click behavior to default
-        behavior[:click] = :default
+        behavior["click"] = "default"
       end
 
-      config[:behaves] = _construct_behavior_string(behavior)
+      config["behaves"] = _construct_behavior_string(behavior)
 
       html_options.merge!(to_config_attributes(config))
 
@@ -84,17 +91,20 @@ module BehaveJSActionView
 
     def content_tag_with_behaveJS(name, content_or_options_with_block = nil, options = nil, escape = true, &block)
       if block_given?
-        content = capture(&block) 
-        options = content_or_options_with_block if content_or_options_with_block.is_a?(Hash)
+        content = nil
+        options = content_or_options_with_block.dup if content_or_options_with_block.is_a?(Hash)
       else
         content = content_or_options_with_block
+        options = options.dup if options
       end
       
       if options
-        behavior = options.delete(:behaves) || {}
-        config   = options.delete(:config) || {}
+        options.stringify_keys!
+        
+        config   = extract_and_dup(options, "config").stringify_keys
+        behavior = options.delete("behaves") || {}
       
-        config[:behaves] = _construct_behavior_string(behavior)
+        config["behaves"] = _construct_behavior_string(behavior)
       
         # merge in behavior and configuration attributes
         options.merge!(to_config_attributes(config))
@@ -104,28 +114,43 @@ module BehaveJSActionView
     end
 
     def form_tag_with_behaveJS(url_for_options = {}, options = {}, *parameters_for_url, &block)
-      options  = options.symbolize_keys
-      config   = options.delete(:config) || {}
-      behavior = options.delete(:behaves) || {}
-      remote   = options.delete(:remote)
+      options  = options.dup.stringify_keys
+      config   = extract_and_dup(options, "config").stringify_keys
+      behavior = extract_and_dup(options, "behaves").stringify_keys
+      remote   = options.delete("remote")
       
       # when a string/symbol is provided for the remote argument, we make that into a "remoteAction" config attribute
-      config[:remoteAction] = remote if remote.is_a?(String) || remote.is_a?(Symbol)
-      config[:confirm]      = options.delete(:confirm)
+      config["remoteAction"] = remote if remote.is_a?(String) || remote.is_a?(Symbol)
+      config["confirm"]      = options.delete("confirm")
       
       # the remote argument takes precedence over any specified submit behavior
-      behavior[:submit] = :remote if remote
+      behavior["submit"] = "remote" if remote
       
       # use "default" behavior
-      behavior[:submit] = :default if !behavior[:submit] && config[:confirm]
+      behavior["submit"] = "default" if !behavior["submit"] && config["confirm"]
       
-      config[:behaves] = _construct_behavior_string(behavior)
+      config["behaves"] = _construct_behavior_string(behavior)
       
       options.merge!(to_config_attributes(config))
       
       form_tag_without_behaveJS(url_for_options, options, *parameters_for_url, &block)
     end
+    
+    def tag_with_behaveJS(name, options = nil, open = false, escape = true)
+      if options
+        options  = options.dup.stringify_keys        
+        config   = extract_and_dup(options, "config").stringify_keys
+        behavior = extract_and_dup(options, "behaves").stringify_keys
 
+        config["behaves"] = _construct_behavior_string(behavior)
+
+        # merge in behavior and configuration attributes
+        options.merge!(to_config_attributes(config))
+      end
+      
+      tag_without_behaveJS(name, options, open, escape)
+    end
+    
     def behaveJS_bootstrap()
       <<-EOF
         <script type="text/javascript" charset="utf-8">
@@ -138,7 +163,7 @@ module BehaveJSActionView
   def self.included(base)
     base.send(:include, InstanceMethods)
     base.class_eval do
-      SUPPORTED_METHODS.each { |method_name| alias_method_chain(method_name, :behaveJS) }
+      OVERRIDDEN_HELPER_METHODS.each { |method_name| alias_method_chain(method_name, :behaveJS) }
     end
   end
 end
