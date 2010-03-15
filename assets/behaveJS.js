@@ -43,14 +43,14 @@
 	function _inititalizeActiveBehaviors()
 	{
 		// add the core behaviors, which are not based on controllers/actions		
-		Object.extend(activeBehaviors, allBehaviors[coreBehaviorsKey]);
+		Object.extend(behaveJS.behaviors, behaviorStore[coreBehaviorsKey]);
 			
 		// add behaviors defined for the current controller and for both the current controller and current action
 		// behaviors defined with more specificity will take precedence
-		var controllerBehaviors       = allBehaviors[behaveJS.settings.controllerName];
-		var controllerActionBehaviors = allBehaviors[_getStorageKey(behaveJS.settings.controllerName, behaveJS.settings.actionName)];
+		var controllerBehaviors       = behaviorStore[behaveJS.settings.controllerName];
+		var controllerActionBehaviors = behaviorStore[_getStorageKey(behaveJS.settings.controllerName, behaveJS.settings.actionName)];
 
-		[ controllerBehaviors, controllerActionBehaviors].each(function(b) { if (b) Object.extend(activeBehaviors, b); });
+		[ controllerBehaviors, controllerActionBehaviors].each(function(b) { if (b) Object.extend(behaveJS.behaviors, b); });
 	}
 	// internal helper functions for attaching/detaching behaviors
 	
@@ -270,7 +270,7 @@
 		
 		options = Object.clone(options || {});
 		
-		// set the context of any callbacks to be the object that is used to perform the remote request
+		// set the context of any callbacks to be the element that is used to perform the remote request
 		for (option in options)
 		{
 			if (Object.isFunction(options[option])) options[option] = options[option].bind(obj);
@@ -322,18 +322,21 @@
 		
 	var	controllers 		= {},	// storage for all controllers
 			remoteActions		= {}, // storage for all remote actions
-			allBehaviors 		= {},	// storage for all behaviors, active and inactive
-			// storage for all behaviors that are active for the current controller and action
-	 		activeBehaviors = { "default" : _defaultBehavior, "remote" : _remoteBehavior };
+			behaviorStore		= {};	// storage for all behaviors, active and inactive
 		
-	allBehaviors[coreBehaviorsKey] = {};
+	behaviorStore[coreBehaviorsKey] = {};
 
 	var behaveJS = 
 	{
 		version 	 : 1.0,
 		settings   : { },
 		controller : null,
-		Helpers 	 :	
+		behaviors	 : 
+		{ 
+			"default" : _defaultBehavior, 
+			"remote"  : _remoteBehavior 
+		},
+		Helpers :
 		{
 			confirmation 			: _confirmationHelper,
 			popup 			 			: _popupHelper,
@@ -411,7 +414,7 @@
 				behaviorKey  = _getStorageKey(arguments[0].controller, arguments[0].action)
 			}
 			
-			allBehaviors[behaviorKey] = Object.extend(allBehaviors[behaviorKey] || {}, newBehaviors);
+			behaviorStore[behaviorKey] = Object.extend(behaviorStore[behaviorKey] || {}, newBehaviors);
 		},
 		createController : function(controllerName, methods)
 		{
@@ -430,8 +433,8 @@
 		},
 		attachBehaviors : function(element, optBehaviors)
 		{
-			var behaviors 					 = (optBehaviors || activeBehaviors),
-					bindBehaviorCallback = _bindBehaviorsToElement.curry(behaviors);
+			var newBehaviors 				 = (optBehaviors || this.behaviors),
+					bindBehaviorCallback = _bindBehaviorsToElement.curry(newBehaviors);
 
     	if (!(element = $(element))) return;
 				
@@ -440,7 +443,7 @@
 				// we setup event delegation on the element if is not within another element
 				// that has event delegation enabled or if we are attaching custom behaviors other
 				// then the active ones.
-				_delegateBehaviors(element, behaviors);
+				_delegateBehaviors(element, newBehaviors);
 			}
 				
 			// bind behaviors to individual elements we are not using event delegation on

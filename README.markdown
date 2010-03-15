@@ -124,6 +124,7 @@ What exactly does behaveJS provide again?
 * A full featured library for creating Javascript [Controllers](http://wiki.github.com/rightscale/behaveJS/controller "Controllers"), [Behaviors](http://wiki.github.com/rightscale/behaveJS/behavior "Behaviors"), and [RemoteActions](http://wiki.github.com/rightscale/behaveJS/remoteaction "RemoteActions")
 * Ability to easily override how confirmation messages are displayed in your app
 * Peace, Love, and Rock n' Roll!
+* See this [SBonRails](http://cloud.github.com/downloads/rightscale/behaveJS/behaveJS.pdf "Presentation") presentation for an overview
 
 And now a word from our sponsors
 --------------------------------
