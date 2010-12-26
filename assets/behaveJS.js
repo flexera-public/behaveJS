@@ -431,14 +431,14 @@
 				controllers[controllerName] = Class.create(controllers["application"], methods);
 			}
 		},
-		attachBehaviors : function(element, optBehaviors)
+		attachBehaviors : function(element, optBehaviors, skipDelegation)
 		{
 			var newBehaviors 				 = (optBehaviors || this.behaviors),
 					bindBehaviorCallback = _bindBehaviorsToElement.curry(newBehaviors);
 
     	if (!(element = $(element))) return;
 				
-			if (optBehaviors || !element.up(delegatedAttrSelector))
+			if (skipDelegation != true && (optBehaviors || !element.up(delegatedAttrSelector)))
 			{
 				// we setup event delegation on the element if is not within another element
 				// that has event delegation enabled or if we are attaching custom behaviors other
